@@ -1,4 +1,5 @@
 import pygame
+from PygameWidgets import Text
 import sys
 import os
 
@@ -7,24 +8,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 WIDTH, HEIGHT = 600, 600
 EXTENSION = 300
 window = pygame.display.set_mode((WIDTH + EXTENSION, HEIGHT))
-
-'''
-EXTENSION:
-
-SHORTEST-PATH VISUALIZER
-<<Algorithm>>
-
-INSTRUCTIONS
-Relocate start (Red) and end (Blue) points by mouse drag
-Create obstacles by mouse left-click
-Erase obstacles by mouse right-click
-Press arrow keys to choose from the algorithms
-Press Return / Enter key to start route finding
-Press R key to reset the whole map
-Press C key to clear route
-
-Coded by: Jobo
-'''
+pygame.display.set_caption("Shortest Path Visualizer")
 
 
 RED = (255,0,0)                 # Starting Point
@@ -37,6 +21,7 @@ SEAFOAM = (60,235,150)          # Visited Terrain
 CHARTREUSE = (210, 215, 105)    # Shortest Path
 
 Algorithms = ["Dijkstra's Algorithm", "A*"]
+algo_index = 0
 
 class Map():
     def __init__(self, gap=15):
@@ -53,14 +38,15 @@ class Map():
         self.queue = []
 
     def change_terrain(self, pos):
-        if self.on_edit == RED:
-            if self.get_index(pos) != self.end:
-                self.start = self.get_index(pos)
-        elif self.on_edit == BLUE:
-            if self.get_index(pos) != self.start:
-                self.end = self.get_index(pos)
-        elif self.on_edit == BLACK or self.on_edit == WHITE:
-            self.terrains[pos[1]//self.gap][pos[0]//self.gap].color = self.on_edit
+        if self.mouse_is_over(pos):
+            if self.on_edit == RED:
+                if self.get_index(pos) != self.end:
+                    self.start = self.get_index(pos)
+            elif self.on_edit == BLUE:
+                if self.get_index(pos) != self.start:
+                    self.end = self.get_index(pos)
+            elif self.on_edit == BLACK or self.on_edit == WHITE:
+                self.terrains[pos[1]//self.gap][pos[0]//self.gap].color = self.on_edit
         
     def reset(self):
         self.enabled = True
@@ -86,14 +72,21 @@ class Map():
 
     def find_route(self, screen):
         self.enabled = False
-        self.visit_terrain(screen, self.start)
-        if self.queue:
-            while True:
-                x, y = self.queue.pop(0)
-                self.visit_terrain(screen, (x,y))
-                if self.queue[0] == self.end or not self.queue:
-                    break
-            self.trace_back(screen)
+        path_found = False
+        if Algorithms[algo_index] == "Dijkstra's Algorithm":
+            self.visit_terrain(screen, self.start)
+            if self.queue:
+                while True:
+                    x, y = self.queue.pop(0)
+                    self.visit_terrain(screen, (x,y))
+                    if not self.queue:
+                        path_found = False
+                        break
+                    elif self.queue[0] == self.end:
+                        path_found = True
+                        break
+                if path_found:
+                    self.trace_back(screen)
 
     def check_neighbors(self, screen, location):
         x, y = location
@@ -163,6 +156,11 @@ class Map():
         pygame.draw.rect(screen, GRAY, (x * self.gap, y * self.gap, self.gap, self.gap), 1)
         pygame.display.update()
     
+    def mouse_is_over(self, pos):
+        if (0 < pos[0] < WIDTH) and (0 < pos[1] < HEIGHT):
+            return True
+        return False
+
     def draw(self, screen):
         for terrain_y in self.terrains:
             for terrain in terrain_y:
@@ -179,7 +177,40 @@ class Terrain():
         self.steps = 0
         self.traced_back = False
 
+class Extension():
+    def __init__(self, objs):
+        self.objs = objs
+        self.left = WIDTH
+        self.top = 0
+        self.width = EXTENSION
+        self.height = HEIGHT
+
+    def mouse_is_over(self, pos):
+        if (self.left < pos[0] < self.left + self.width) and (self.top < pos[1] < self.top + self.height):
+            return True
+        return False
+
+    def draw(self, window):
+        for obj in self.objs:
+            obj.draw(window)
+        pygame.draw.rect(window, BLACK, (self.left, self.top, self.width, self.height), 2)
+
+text1 = Text(text="SHORTEST-PATH VISUALIZER", align="center", fontsize=22, pos=(WIDTH, 10), dim=(EXTENSION, 0), bold=True)
+text2 = Text(text=f"<< {Algorithms[algo_index]} >>", align = "center", fontsize=18, pos=(WIDTH, 35), dim=(EXTENSION, 0))
+text3 = Text(text="INSTRUCTIONS", align="center", fontsize=20, pos=(WIDTH, 100), dim=(EXTENSION, 0), bold=True)
+text4 = Text(text=">> Relocate start (Red) and end (Blue) points by mouse drag", align="left", fontsize=14, pos=(WIDTH, 130), dim=(EXTENSION, 0), wrap=True)
+text5 = Text(text=">> Create obstacles by mouse left-click", align="left", fontsize=14, pos=(WIDTH, 170), dim=(EXTENSION, 0), wrap=True)
+text6 = Text(text=">> Erase obstacles by mouse right-click", align="left", fontsize=14, pos=(WIDTH, 190), dim=(EXTENSION, 0), wrap=True)
+text7 = Text(text=">> Press arrow keys to choose from the algorithms", align="left", fontsize=14, pos=(WIDTH, 210), dim=(EXTENSION, 0), wrap=True)
+text8 = Text(text=">> Press Return / Enter key to start route finding", align="left", fontsize=14, pos=(WIDTH, 230), dim=(EXTENSION, 0), wrap=True)
+text9 = Text(text=">> Press R key to reset the whole map", align="left", fontsize=14, pos=(WIDTH, 250), dim=(EXTENSION, 0), wrap=True)
+text10 = Text(text=">> Press C key to clear route", align="left", fontsize=14, pos=(WIDTH, 270), dim=(EXTENSION, 0), wrap=True)
+text_credits = Text(text="Programmed by: Jobo", align="right", fontsize=12, pos=(WIDTH, HEIGHT - 20), dim=(EXTENSION, 0))
+
+texts = [text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text_credits]
+
 map = Map()
+extension = Extension(texts)
 
 while True:
     pos = pygame.mouse.get_pos()
@@ -190,11 +221,13 @@ while True:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if map.enabled:
                 if event.button == 1:
-                    if map.get_index(pos) == map.start: map.on_edit = RED
-                    elif map.get_index(pos) == map.end: map.on_edit = BLUE
-                    else: map.on_edit = BLACK
+                    if not extension.mouse_is_over(pos):
+                        if map.get_index(pos) == map.start: map.on_edit = RED
+                        elif map.get_index(pos) == map.end: map.on_edit = BLUE
+                        else: map.on_edit = BLACK
                 elif event.button == 3:
-                    map.on_edit = WHITE
+                    if not extension.mouse_is_over(pos):
+                        map.on_edit = WHITE
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1 or event.button == 3:
                 map.on_edit = GRAY
@@ -203,11 +236,24 @@ while True:
                     map.reset()
                 if event.key == pygame.K_c:
                     map.clear()
-                if event.key == pygame.K_RETURN and map.enabled:
-                    map.find_route(window)
+                if map.enabled:
+                    if event.key == pygame.K_RETURN:
+                        map.find_route(window)
+                    if event.key == pygame.K_RIGHT or event.key == pygame.K_UP:
+                        algo_index += 1
+                        if algo_index > len(Algorithms) - 1: algo_index = 0
+                        extension.objs[1].text = f"<< {Algorithms[algo_index]} >>"
+                    if event.key == pygame.K_LEFT or event.key == pygame.K_DOWN:
+                        algo_index -= 1
+                        if algo_index < 0: algo_index = len(Algorithms) - 1
+                        extension.objs[1].text = f"<< {Algorithms[algo_index]} >>"
+
 
     map.change_terrain(pos)
 
     window.fill((150,150,150))
+
     map.draw(window)
+    extension.draw(window)
+
     pygame.display.update()
