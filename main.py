@@ -39,14 +39,16 @@ class Map():
 
     def change_terrain(self, pos):
         if self.mouse_is_over(pos):
+            ter_i = self.get_index(pos)
+            ter_x, ter_y = ter_i
             if self.on_edit == RED:
-                if self.get_index(pos) != self.end:
-                    self.start = self.get_index(pos)
+                if ter_i != self.end and self.terrains[ter_y][ter_x].color == WHITE:
+                    self.start = ter_i
             elif self.on_edit == BLUE:
-                if self.get_index(pos) != self.start:
-                    self.end = self.get_index(pos)
+                if ter_i != self.start and self.terrains[ter_y][ter_x].color == WHITE:
+                    self.end = ter_i
             elif self.on_edit == BLACK or self.on_edit == WHITE:
-                self.terrains[pos[1]//self.gap][pos[0]//self.gap].color = self.on_edit
+                self.terrains[ter_y][ter_x].color = self.on_edit
         
     def reset(self):
         self.enabled = True
@@ -175,8 +177,7 @@ class Terrain():
         self.y = y
         self.color = color
         self.steps = 0
-        self.traced_back = False
-
+    
 class Extension():
     def __init__(self, objs):
         self.objs = objs
