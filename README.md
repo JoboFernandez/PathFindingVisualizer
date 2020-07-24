@@ -1,2 +1,2 @@
-# ShortestPathVIsualizer
-A shortest path visualizer using different algorithms in pygame
+# PathFindingVisualizer
+A path-finding visualizer using different algorithms (BFS, DFS, Dijkstra's, A*) in pygame
