@@ -1,11 +1,12 @@
 # PathFindingVisualizer
-Description:
+### Description:
+
 A 2D path-finding visualizer using different algorithms in pygame.
 
-Packages:
+### Packages:
 - Pygame
 
-Algorithms: 
+### Algorithms: 
 - Path Finding:
   - Breadth-First Search
   - Depth-First Search
@@ -13,7 +14,7 @@ Algorithms:
   - A* algorithm
 - Maze Generation: Random
 
-Recommendations:
+### Recommendations:
 - L/R key for path-finding algorithms, U/D key for maze-generation algorithms
 - More maze-generation algorithms: 
   - [ ] Recursive backtracking
