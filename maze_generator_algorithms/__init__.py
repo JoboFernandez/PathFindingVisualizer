@@ -1,0 +1,3 @@
+from .generate_maze_by_randomization import generate_maze_by_randomization
+
+from .generate_maze import generate_maze
