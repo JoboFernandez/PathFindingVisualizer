@@ -1,4 +1,3 @@
-from random import randint
 from .terrain import Terrain
 import pygame
 import settings
@@ -6,172 +5,159 @@ import settings
 
 class Maze:
 
-    def __init__(self, gap=10):
+    def __init__(self, terrain_size=10):
+        # dimensions
+        self.gap = terrain_size
         self.width = settings.WIDTH
         self.height = settings.HEIGHT
-        self.gap = gap
-        self.start = (0, 0)
-        self.xmax = settings.WIDTH // gap - 1
-        self.ymax = settings.HEIGHT // gap - 1
-        self.end = (self.xmax, self.ymax)
-        self.terrains = [[Terrain(x, y, gap) for x in range(self.end[0] + 1)] for y in range(self.end[1] + 1)]
+        self.x_max = settings.WIDTH // terrain_size - 1
+        self.y_max = settings.HEIGHT // terrain_size - 1
+
+        # status
         self.on_edit = settings.GRAY
         self.enabled = True
-        self.queue = []
 
-    def change_terrain(self, pos):
+        # elements
+        self.start = (0, 0)
+        self.end = (self.x_max, self.y_max)
+        self.terrains = {(x, y): Terrain(position=(x, y)) for x in range(self.x_max + 1) for y in range(self.y_max + 1)}
+        self.set_terrain_neighbors()
+
+    def set_terrain_neighbors(self):
+        for position in self.terrains:
+            neighbor_positions = []
+
+            if position[0] > 0:
+                neighbor_positions.append((position[0] - 1, position[1]))
+            if position[1] > 0:
+                neighbor_positions.append((position[0], position[1] - 1))
+            if position[0] < self.x_max:
+                neighbor_positions.append((position[0] + 1, position[1]))
+            if position[1] < self.y_max:
+                neighbor_positions.append((position[0], position[1] + 1))
+
+            for neighbor_position in neighbor_positions:
+                self.terrains[position].neighbors.append(self.terrains[neighbor_position])
+
+    def change_edit_status(self, mouse_down: bool, pos: tuple, button_click: int):
+        if not self.enabled or not self.mouse_is_over(pos):
+            return
+
+        if not mouse_down:
+            self.on_edit = settings.GRAY
+            return
+
+        if button_click == 1:
+            index = self.get_index(pos)
+            if index == self.start:
+                self.on_edit = settings.RED
+            elif index == self.end:
+                self.on_edit = settings.BLUE
+            else:
+                self.on_edit = settings.BLACK
+
+        elif button_click == 3:
+            self.on_edit = settings.WHITE
+
+    def change_terrain(self, pos: tuple):
         if self.mouse_is_over(pos):
-            ter_i = self.get_index(pos)
-            ter_x, ter_y = ter_i
+            position = self.get_index(pos)
+
+            # starting position will be dragged
             if self.on_edit == settings.RED:
-                if ter_i != self.end and self.terrains[ter_y][ter_x].color == settings.WHITE:
-                    self.start = ter_i
+                if position != self.end and self.terrains[position].color == settings.WHITE:
+                    self.start = position
+
+            # end point will be dragged
             elif self.on_edit == settings.BLUE:
-                if ter_i != self.start and self.terrains[ter_y][ter_x].color == settings.WHITE:
-                    self.end = ter_i
-            elif self.on_edit == settings.BLACK or self.on_edit == settings.WHITE:
-                if ter_i != self.start and ter_i != self.end:
-                    self.set_terrain_color(ter_i, self.on_edit)
+                if position != self.start and self.terrains[position].color == settings.WHITE:
+                    self.end = position
+
+            # create or remove terrain obstacles
+            elif self.on_edit in [settings.WHITE, settings.BLACK]:
+                if position != self.start and position != self.end:
+                    self.terrains[position].color = self.on_edit
 
     def reset(self):
-        self.enabled = True
+        self.on_edit = settings.GRAY
         self.start = (0, 0)
-        self.end = (self.xmax, self.ymax)
-        self.queue = []
-        for terrain_y in self.terrains:
-            for terrain in terrain_y:
-                terrain.color = settings.WHITE
-                terrain.steps = 0
+        self.end = (self.x_max, self.y_max)
+        for position, terrain in self.terrains.items():
+            terrain.restore_defaults()
 
     def clear(self):
-        self.enabled = True
-        self.queue = []
-        for terrain_y in self.terrains:
-            for terrain in terrain_y:
-                if terrain.color != settings.BLACK:
-                    terrain.color = settings.WHITE
-                    terrain.steps = 0
+        self.on_edit = settings.GRAY
+        for position, terrain in self.terrains.items():
+            if terrain.is_passable():
+                terrain.restore_defaults()
 
-    def auto_generate(self):
-        self.reset()
-        self.start = (randint(0, self.xmax), randint(0, self.ymax))
-        self.end = self.start
-        while self.end == self.start:
-            self.end = (randint(0, self.xmax), randint(0, self.ymax))
-        for x in range(0, self.xmax + 1):
-            for y in range(0, self.ymax + 1):
-                subject = (x, y)
-                if subject not in [self.start, self.end]:
-                    if randint(0, 2) < 1:
-                        self.set_terrain_color((x, y), settings.BLACK)
-
-    def get_index(self, pos):
-        return pos[0] // self.gap, pos[1] // self.gap
-
-    def find_route(self, screen):
-        self.enabled = False
-        self.terrains[self.start[1]][self.start[0]].g = 0
-        path_found = False
-        self.visit_terrain(screen, self.start)
-        if self.queue:
-            while True:
-                self.visit_terrain(screen, self.queue.pop(0))
-                if not self.queue:
-                    break
-                elif self.queue[0] == self.end:
-                    path_found = True
-                    break
-            if path_found:
-                self.trace_back(screen)
-
-    def visit_terrain(self, screen, location):
-        self.update_terrain(screen, location, settings.SEAFOAM)
-        self.check_neighbors(screen, location)
-
-    def check_neighbors(self, screen, visitor):
-        x, y = visitor
-        step_count = self.terrains[y][x].g + 1
-
-        neighbors = []
-        if x > 0:           neighbors.append((x - 1, y))
-        if y > 0:           neighbors.append((x, y - 1))
-        if x < self.xmax:   neighbors.append((x + 1, y))
-        if y < self.ymax:   neighbors.append((x, y + 1))
-
-        # Adding to Queue
-        for neighbor in neighbors:
-            self.add_terrain_to_queue(neighbor, step_count, visitor)
-            if self.get_terrain_color(neighbor) == settings.WHITE:
-                self.update_terrain(screen, neighbor, settings.EMERALD)
-
-    def add_terrain_to_queue(self, location, g, visitor):
-        x, y = location
-        x2, y2 = visitor
-        if settings.ALGORITHMS[settings.algo_index] == "Breadth-First Search" and self.get_terrain_color(location) == settings.WHITE:
-            self.queue.append(location)
-            self.terrains[y][x].set_last_visit(self.terrains[y2][x2])
-        elif settings.ALGORITHMS[settings.algo_index] == "Depth-First Search":
-            if self.get_terrain_color(location) == settings.WHITE:
-                self.queue.insert(0, location)
-                self.terrains[y][x].set_last_visit(self.terrains[y2][x2])
-            elif self.get_terrain_color(location) == settings.EMERALD:
-                self.queue.insert(0, self.queue.pop(self.queue.index(location)))
-        elif settings.ALGORITHMS[settings.algo_index] in ["Dijkstra's Algorithm", "A*"]:
-            if self.get_terrain_color(location) == settings.WHITE:
-                self.terrains[y][x].g = g
-                self.terrains[y][x].update_h(self.end)
-                self.terrains[y][x].update_f()
-                self.update_queue(location)
-                self.terrains[y][x].set_last_visit(self.terrains[y2][x2])
-
-    def update_queue(self, location):
-        x, y = location
-        for i in range(len(self.queue)):
-            if self.terrains[y][x].f < self.terrains[self.queue[i][1]][self.queue[i][0]].f:
-                self.queue.insert(i, location)
-                break
-        else:
-            self.queue.append(location)
-
-    def get_terrain_color(self, location):
-        return self.terrains[location[1]][location[0]].color
-
-    def set_terrain_color(self, location, color):
-        self.terrains[location[1]][location[0]].color = color
-
-    def trace_back(self, screen):
-        start = self.end
-        while True:
-            start = self.get_terrain_last_visitor(start)
-            if start == self.start:
-                break
-            self.update_terrain(screen, start, settings.CHARTREUSE)
-
-    def update_terrain(self, screen, location, color):
-        x, y = location
-        self.set_terrain_color(location, color)
-        pygame.draw.rect(screen, self.get_terrain_color(location), (x * self.gap, y * self.gap, self.gap, self.gap))
-        pygame.draw.rect(screen, settings.RED, (self.start[0] * self.gap, self.start[1] * self.gap, self.gap, self.gap))
-        pygame.draw.rect(screen, settings.BLUE, (self.end[0] * self.gap, self.end[1] * self.gap, self.gap, self.gap))
-        pygame.draw.rect(screen, settings.GRAY, (x * self.gap, y * self.gap, self.gap, self.gap), 1)
-        pygame.display.update()
-
-    def get_terrain_last_visitor(self, location):
-        last_visit_x = self.terrains[location[1]][location[0]].last_visit.x
-        last_visit_y = self.terrains[location[1]][location[0]].last_visit.y
-        return last_visit_x, last_visit_y
-
-    @staticmethod
-    def mouse_is_over(pos):
-        if (0 < pos[0] < settings.WIDTH) and (0 < pos[1] < settings.HEIGHT):
+    def mouse_is_over(self, pos: tuple) -> bool:
+        if (0 < pos[0] < self.width) and (0 < pos[1] < self.height):
             return True
         return False
 
-    def draw(self, screen):
-        for terrain_y in self.terrains:
-            for terrain in terrain_y:
-                pygame.draw.rect(screen, terrain.color,
-                                 (terrain.x * self.gap, terrain.y * self.gap, self.gap, self.gap))
-                pygame.draw.rect(screen, settings.RED, (self.start[0] * self.gap, self.start[1] * self.gap, self.gap, self.gap))
-                pygame.draw.rect(screen, settings.BLUE, (self.end[0] * self.gap, self.end[1] * self.gap, self.gap, self.gap))
-                pygame.draw.rect(screen, settings.GRAY, (terrain.x * self.gap, terrain.y * self.gap, self.gap, self.gap), 1)
+    def get_index(self, pos: tuple) -> tuple:
+        return pos[0] // self.gap, pos[1] // self.gap
+
+    def update_terrain_color(self, screen: pygame.display.set_mode, terrain: Terrain, color: tuple):
+        terrain.color = color
+        x, y = terrain.get_position()
+        sx, sy = self.start
+        ex, ey = self.end
+
+        pygame.draw.rect(screen, color, (x * self.gap, y * self.gap, self.gap, self.gap))
+        if terrain.get_position() in [self.start, self.end]:
+            pygame.draw.rect(screen, settings.RED, (sx * self.gap, sy * self.gap, self.gap, self.gap))
+            pygame.draw.rect(screen, settings.BLUE, (ex * self.gap, ey * self.gap, self.gap, self.gap))
+        pygame.draw.rect(screen, settings.GRAY, (x * self.gap, y * self.gap, self.gap, self.gap), 1)
+        pygame.display.update()
+
+    def update_terrain_color_simultaneously(self, screen: pygame.display.set_mode, terrains: list, color: tuple):
+        sx, sy = self.start
+        ex, ey = self.end
+        for terrain in terrains:
+            terrain.color = color
+            x, y = terrain.get_position()
+
+            pygame.draw.rect(screen, color, (x * self.gap, y * self.gap, self.gap, self.gap))
+            if terrain.get_position() in [self.start, self.end]:
+                pygame.draw.rect(screen, settings.RED, (sx * self.gap, sy * self.gap, self.gap, self.gap))
+                pygame.draw.rect(screen, settings.BLUE, (ex * self.gap, ey * self.gap, self.gap, self.gap))
+            pygame.draw.rect(screen, settings.GRAY, (x * self.gap, y * self.gap, self.gap, self.gap), 1)
+
+        pygame.display.update()
+
+    def display_path_by_backtracking(self, screen: pygame.display.set_mode):
+        # initialize variables
+        backtrack_paths = []
+        current_terrain = self.terrains[self.end]
+
+        # return if no path found
+        if not current_terrain:
+            return
+
+        # backtrack
+        while True:
+            backtrack_paths.append(current_terrain)
+            if current_terrain.get_position() == self.start:
+                break
+            current_terrain = self.terrains[current_terrain.get_position()].previous_terrain
+
+        # draw path
+        for terrain in backtrack_paths[::-1]:
+            self.update_terrain_color(screen=screen, terrain=terrain, color=settings.CHARTREUSE)
+
+    def draw(self, screen: pygame.display.set_mode):
+        # draw terrain colors
+        for position, terrain in self.terrains.items():
+            x, y = position
+            pygame.draw.rect(screen, terrain.color, (x * self.gap, y * self.gap, self.gap, self.gap))
+            pygame.draw.rect(screen, settings.GRAY, (x * self.gap, y * self.gap, self.gap, self.gap), 1)
+
+        # draw start and end points
+        sx, sy = self.start
+        ex, ey = self.end
+        pygame.draw.rect(screen, settings.RED, (sx * self.gap, sy * self.gap, self.gap, self.gap))
+        pygame.draw.rect(screen, settings.BLUE, (ex * self.gap, ey * self.gap, self.gap, self.gap))
+        pygame.draw.rect(screen, settings.GRAY, (sx * self.gap, sy * self.gap, self.gap, self.gap), 1)
+        pygame.draw.rect(screen, settings.GRAY, (ex * self.gap, ey * self.gap, self.gap, self.gap), 1)
