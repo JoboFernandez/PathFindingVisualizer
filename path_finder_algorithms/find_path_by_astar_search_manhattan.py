@@ -3,7 +3,7 @@ import pygame
 import settings
 
 
-def find_path_by_astar_search(screen: pygame.display.set_mode, maze: Maze):
+def find_path_by_astar_search_manhattan(screen: pygame.display.set_mode, maze: Maze):
     # initialize frontier and expanded nodes
     frontier = [maze.terrains[maze.start]]
     expanded = [[False for _ in range(maze.x_max + 1)] for _ in range(maze.y_max + 1)]
