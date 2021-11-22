@@ -3,6 +3,8 @@
 
 A 2D path-finding visualizer using different algorithms in pygame.
 
+![alt text](https://github.com/JoboFernandez/PathFindingVisualizer/blob/master/images/01_BFS.png?raw=true)
+
 ### Packages:
 - Pygame
 
