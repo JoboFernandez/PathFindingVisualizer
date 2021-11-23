@@ -15,6 +15,8 @@ A 2D path-finding visualizer using different algorithms in pygame.
   - Breadth-First Search
   - Depth-First Search
   - Dijkstra's algorithm
+  - Greedy Best First Search (Euclidian)
+  - Greedy Best First Search (Manhattan)
   - Iterative-Deepening Search
   - Uniform Cost Search
 - Maze Generation:
