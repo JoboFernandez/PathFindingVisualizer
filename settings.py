@@ -4,6 +4,7 @@ EXTENSION = 300
 ALGORITHMS = [
     "A* Search - Euclidian Heuristic",
     "A* Search - Manhattan Heuristic",
+    "Bellman-Ford Algorithm",
     "Breadth-First Search",
     "Depth-First Search",
     "Dijkstra's Algorithm",

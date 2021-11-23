@@ -19,7 +19,7 @@ class Terrain:
         return self.x, self.y
 
     def restore_defaults(self):
-        self.heuristic_distance = 0
+        self.source_distance = sys.maxsize
         self.previous_terrain = None
         self.color = settings.WHITE
 

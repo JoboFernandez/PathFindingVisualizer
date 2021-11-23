@@ -12,6 +12,7 @@ A 2D path-finding visualizer using different algorithms in pygame.
 - Path Finding:
   - A* Search (Euclidian)
   - A* Search (Manhattan)
+  - Bellman-Ford Algorithm
   - Breadth-First Search
   - Depth-First Search
   - Dijkstra's algorithm

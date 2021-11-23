@@ -9,6 +9,7 @@ def find_path(maze: Maze, screen: pygame.display.set_mode):
     algorithm = {
         "A* Search - Euclidian Heuristic": find_path_by_astar_search_euclidian,
         "A* Search - Manhattan Heuristic": find_path_by_astar_search_manhattan,
+        "Bellman-Ford Algorithm": find_path_by_bellman_ford_algorithm,
         "Breadth-First Search": find_path_by_breadth_first_search,
         "Depth-First Search": find_path_by_depth_first_search,
         "Dijkstra's Algorithm": find_path_by_dijkstras_algorithm,
