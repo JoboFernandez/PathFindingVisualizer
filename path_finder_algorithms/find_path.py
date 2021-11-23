@@ -7,13 +7,13 @@ import settings
 def find_path(maze: Maze, screen: pygame.display.set_mode):
     # algorithm name to function mapping
     algorithm = {
-        "Breadth-First Search": find_path_by_bfs,
-        "Depth-First Search": find_path_by_dfs,
-        "Dijkstra's Algorithm": find_path_by_dijkstras_algorithm,
-        "Uniform Cost Search": find_path_by_uniform_cost_search,
-        "A* Search - Manhattan Heuristic": find_path_by_astar_search_manhattan,
         "A* Search - Euclidian Heuristic": find_path_by_astar_search_euclidian,
+        "A* Search - Manhattan Heuristic": find_path_by_astar_search_manhattan,
+        "Breadth-First Search": find_path_by_breadth_first_search,
+        "Depth-First Search": find_path_by_depth_first_search,
+        "Dijkstra's Algorithm": find_path_by_dijkstras_algorithm,
         "Iterative Deepening Search": find_path_by_iterative_deepening_search,
+        "Uniform Cost Search": find_path_by_uniform_cost_search,
     }
 
     # perform algorithm
