@@ -12,6 +12,8 @@ def find_path(maze: Maze, screen: pygame.display.set_mode):
         "Breadth-First Search": find_path_by_breadth_first_search,
         "Depth-First Search": find_path_by_depth_first_search,
         "Dijkstra's Algorithm": find_path_by_dijkstras_algorithm,
+        "Greedy Best First Search - Euclidian": find_path_by_greedy_best_first_search_euclidian,
+        "Greedy Best First Search - Manhattan": find_path_by_greedy_best_first_search_manhattan,
         "Iterative Deepening Search": find_path_by_iterative_deepening_search,
         "Uniform Cost Search": find_path_by_uniform_cost_search,
     }

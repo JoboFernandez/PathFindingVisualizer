@@ -23,12 +23,19 @@ class Terrain:
         self.previous_terrain = None
         self.color = settings.WHITE
 
-    def heuristic_distance_by_manhattan(self, destination: tuple):
+    def heuristic_value_by_manhattan(self, destination: tuple):
         x = (destination[0] - self.x) if destination[0] > self.x else -(destination[0] - self.x)
         y = (destination[1] - self.y) if destination[1] > self.y else -(destination[1] - self.y)
-        return self.source_distance + x + y
+        return x + y
+
+    def heuristic_value_by_euclidian(self, destination: tuple):
+        x = (destination[0] - self.x) if destination[0] > self.x else -(destination[0] - self.x)
+        y = (destination[1] - self.y) if destination[1] > self.y else -(destination[1] - self.y)
+        return (x ** 2 + y ** 2) ** 0.5
+
+
+    def heuristic_distance_by_manhattan(self, destination: tuple):
+        return self.source_distance + self.heuristic_value_by_manhattan(destination=destination)
 
     def heuristic_distance_by_euclidian(self, destination: tuple):
-        x = (destination[0] - self.x) if destination[0] > self.x else -(destination[0] - self.x)
-        y = (destination[1] - self.y) if destination[1] > self.y else -(destination[1] - self.y)
-        return self.source_distance + (x ** 2 + y ** 2) ** 0.5
+        return self.source_distance + self.heuristic_value_by_euclidian(destination=destination)

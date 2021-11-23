@@ -7,6 +7,8 @@ ALGORITHMS = [
     "Breadth-First Search",
     "Depth-First Search",
     "Dijkstra's Algorithm",
+    "Greedy Best First Search - Euclidian",
+    "Greedy Best First Search - Manhattan",
     "Iterative Deepening Search",
     "Uniform Cost Search",
 ]
